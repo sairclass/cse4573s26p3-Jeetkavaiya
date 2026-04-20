@@ -48,7 +48,7 @@ def detect_faces(img: torch.Tensor) -> List[List[float]]:
     height = int(image_hw3.shape[0])
     width = int(image_hw3.shape[1])
     for box in raw_boxes:
-        detection_results.append(_face_location_to_xywh(box, height, width))
+        detection_results.appe(_face_location_to_xywh(box, height, width))
 
     return detection_results
 
