@@ -38,6 +38,17 @@ def detect_faces(img: torch.Tensor) -> List[List[float]]:
     detection_results: List[List[float]] = []
 
     ##### YOUR IMPLEMENTATION STARTS HERE #####
+    try:
+        image_hw3 = _prepare_image_for_face_recognition(img)
+    except Exception:
+        return detection_results
+
+    raw_boxes = _find_face_locations(image_hw3)
+
+    height = int(image_hw3.shape[0])
+    width = int(image_hw3.shape[1])
+    for box in raw_boxes:
+        detection_results.append(_face_location_to_xywh(box, height, width))
 
     return detection_results
 
