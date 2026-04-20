@@ -48,7 +48,7 @@ def detect_faces(img: torch.Tensor) -> List[List[float]]:
     height = int(image_hw3.shape[0])
     width = int(image_hw3.shape[1])
     for box in raw_boxes:
-        detection_results.appe(_face_location_to_xywh(box, height, width))
+        detection_results.append(_face_location_to_xywh(box, height, width))
 
     return detection_results
 
@@ -280,3 +280,42 @@ def _find_face_locations(img: torch.Tensor) -> List:
                 best_boxes = boxes
 
     return best_boxes
+
+def _try_get_encoding(img: torch.Tensor):
+    image_np = _tensor_image_to_numpy(img)
+    boxes = _find_face_locations(img)
+    boxes = _pick_largest_box(boxes)
+
+    if len(boxes) > 0:
+        try:
+            encodings = face_recognition.face_encodings(image_np, boxes)
+        except Exception:
+            encodings = []
+
+        if len(encodings) > 0:
+            return _encoding_to_tensor(encodings[0])
+
+    try:
+        encodings = face_recognition.face_encodings(image_np)
+    except Exception:
+        encodings = []
+
+    if len(encodings) > 0:
+        return _encoding_to_tensor(encodings[0])
+
+    return None
+
+def _extract_single_face_encoding(img: torch.Tensor) -> torch.Tensor:
+    try:
+        image_hw3 = _prepare_image_for_face_recognition(img)
+    except Exception:
+        return torch.zeros(128, dtype=torch.float32)
+
+    candidates = [image_hw3, _flip_last_channel(image_hw3)]
+
+    for candidate in candidates:
+        encoding = _try_get_encoding(candidate)
+        if encoding is not None:
+            return encoding
+
+    return torch.zeros(128, dtype=torch.float32)
