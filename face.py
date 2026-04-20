@@ -247,3 +247,25 @@ def _run_kmeans(points: torch.Tensor, K: int) -> torch.Tensor:
     final_assignments = torch.argmin(final_distances, dim=1)
     final_assignments = _repair_empty_clusters(final_assignments, final_distances, K)
     return final_assignments.long()
+
+def _find_face_locations(img: torch.Tensor) -> List:
+    best_boxes = []
+    img_list = [img, _flip_last_channel(img)]
+
+    for now_img in img_list:
+        image_np = _tensor_image_to_numpy(now_img)
+
+        for upsample in (0, 1, 2):
+            try:
+                boxes = face_recognition.face_locations(
+                    image_np,
+                    number_of_times_to_upsample=upsample,
+                    model="hog",
+                )
+            except Exception:
+                boxes = []
+
+            if len(boxes) > len(best_boxes):
+                best_boxes = boxes
+
+    return best_boxes
