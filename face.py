@@ -73,10 +73,34 @@ def cluster_faces(imgs: Dict[str, torch.Tensor], K: int) -> List[List[str]]:
     Numpy and cv2 are not allowed, except for face recognition API where the API returns plain python Lists, convert them to torch.Tensor.
     
     """
+    if K <= 0:
+        return []
+
     cluster_results: List[List[str]] = [[] for _ in range(K)] # Please make sure your output follows this data format.
         
     ##### YOUR IMPLEMENTATION STARTS HERE #####
-    
+    if len(imgs) == 0:
+        return cluster_results
+
+    names = sorted(imgs.keys())
+    feature_list: List[torch.Tensor] = []
+
+    for name in names:
+        feature_list.append(_extract_single_face_encoding(imgs[name]))
+
+    features = torch.stack(feature_list, dim=0)
+    features = _normalize_rows(features)
+
+    assignments = _run_kmeans(features, K)
+
+    for idx, cluster_id in enumerate(assignments.tolist()):
+        cluster_results[int(cluster_id)].append(names[idx])
+
+    for cluster in cluster_results:
+        cluster.sort()
+
+    cluster_results = sorted(cluster_results, key=_cluster_sort_key)
+
     return cluster_results
 
 
@@ -319,3 +343,8 @@ def _extract_single_face_encoding(img: torch.Tensor) -> torch.Tensor:
             return encoding
 
     return torch.zeros(128, dtype=torch.float32)
+
+def _cluster_sort_key(cluster: List[str]):
+    if len(cluster) == 0:
+        return "~"
+    return cluster[0]
